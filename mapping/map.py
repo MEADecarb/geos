@@ -1,6 +1,8 @@
+import streamlit as st
 import folium
 import requests
 import json
+from streamlit_folium import st_folium
 
 # URLs to your GeoJSON files on GitHub
 geojson_url1 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/Enough_Act_Child_Poverty_Census_Tracts_-2847962131010073922%20(1).geojson'
@@ -24,8 +26,6 @@ add_geojson_to_map(geojson_url3, m, 'Census Tracts')
 # Add layer control to the map
 folium.LayerControl().add_to(m)
 
-# Save the map to an HTML file
-m.save('map.html')
-
-# To display the map in a Jupyter Notebook
-m
+# Display the map in Streamlit
+st.title('Interactive Map with GeoJSON Layers')
+st_folium(m, width=700, height=500)
