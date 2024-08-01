@@ -7,12 +7,14 @@ import requests
 from typing import Dict, Any
 import urllib.request
 import urllib.error
+import io
 
 @st.cache_data
 def load_geojson(url: str) -> gpd.GeoDataFrame:
   try:
       with urllib.request.urlopen(url) as response:
-          return gpd.read_file(response)
+          content = response.read()
+          return gpd.read_file(io.BytesIO(content))
   except urllib.error.HTTPError as e:
       st.error(f"HTTP Error {e.code}: Unable to access the GeoJSON file. Please check the URL and try again.")
       st.stop()
@@ -20,7 +22,7 @@ def load_geojson(url: str) -> gpd.GeoDataFrame:
       st.error(f"URL Error: {e.reason}. Please check your internet connection and the URL.")
       st.stop()
   except Exception as e:
-      st.error(f"An unexpected error occurred: {str(e)}")
+      st.error(f"An unexpected error occurred while loading GeoJSON: {str(e)}")
       st.stop()
 
 @st.cache_data
@@ -28,7 +30,7 @@ def load_data(url: str) -> pd.DataFrame:
   try:
       return pd.read_csv(url)
   except Exception as e:
-      st.error(f"Error loading CSV data: {str(e)}")
+      st.error(f"An error occurred while loading CSV data: {str(e)}")
       st.stop()
 
 @st.cache_data
@@ -80,8 +82,11 @@ def main():
 
   with col1:
       st.subheader("Map")
-      map_folium = create_map(geojson_data, arcgis_data)
-      folium_static(map_folium, width=700, height=500)
+      try:
+          map_folium = create_map(geojson_data, arcgis_data)
+          folium_static(map_folium, width=700, height=500)
+      except Exception as e:
+          st.error(f"An error occurred while creating the map: {str(e)}")
 
   with col2:
       st.subheader("Data Table")
