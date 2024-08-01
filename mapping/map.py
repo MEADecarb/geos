@@ -1,40 +1,31 @@
-import streamlit as st
 import folium
 import requests
-from folium import GeoJson
-from streamlit_folium import st_folium
+import json
 
-# List of GeoJSON files in the GitHub repository
-geojson_files = [
-    "Enough_CP_ct.GEOJSON",
-    "Enough_Act_School_Locations.geojson",
-    "MDHB550CensusTracts(1).geojson",
-]
+# URLs to your GeoJSON files on GitHub
+geojson_url1 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/Enough_Act_Child_Poverty_Census_Tracts_-2847962131010073922%20(1).geojson'
+geojson_url2 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/Enough_Act_School_Locations.geojson'
+geojson_url3 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/MDHB550CensusTracts%20(1).geojson'
 
-# Function to get raw GitHub URL for a GeoJSON file
-def get_raw_github_url(file_name):
-    return f"https://raw.githubusercontent.com/MEADecarb/geos/main/data/{file_name}"
+# Create a base map
+m = folium.Map(location=[39.2904, -76.6122], zoom_start=10)  # Replace latitude and longitude with your desired center coordinates
 
-# Streamlit app
-st.title("Folium Map with GeoJSON Data")
+# Function to add GeoJSON to the map
+def add_geojson_to_map(url, map_obj, layer_name):
+    response = requests.get(url)
+    data = response.json()
+    folium.GeoJson(data, name=layer_name).add_to(map_obj)
 
-# Create a Folium map
-m = folium.Map(location=[39.5, -98.35], zoom_start=4)
+# Add each GeoJSON layer to the map
+add_geojson_to_map(geojson_url1, m, 'Child Poverty Census Tracts')
+add_geojson_to_map(geojson_url2, m, 'School Locations')
+add_geojson_to_map(geojson_url3, m, 'Census Tracts')
 
-# Add each GeoJSON file to the map
-for file_name in geojson_files:
-    geojson_url = get_raw_github_url(file_name)
-    response = requests.get(geojson_url)
-    
-    if response.status_code == 200:
-        try:
-            geojson_data = response.json()
-            GeoJson(geojson_data, name=file_name).add_to(m)
-        except ValueError as e:
-            st.error(f"Error decoding JSON for {file_name}: {e}")
-            st.text(f"Response content: {response.text[:200]}")  # Display first 200 characters of the response
-    else:
-        st.error(f"Failed to load {file_name}: HTTP {response.status_code}")
+# Add layer control to the map
+folium.LayerControl().add_to(m)
 
-# Display the map in Streamlit
-st_folium(m, width=700, height=500)
+# Save the map to an HTML file
+m.save('map.html')
+
+# To display the map in a Jupyter Notebook
+m
