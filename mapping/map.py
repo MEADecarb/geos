@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 geojson_files = [
     "Enough_CP_ct.GEOJSON",
     "Enough_Act_School_Locations.geojson",
-    "MDHB550CensusTracts.geojson",
+    "MDHB550CensusTracts(1).geojson",
 ]
 
 # Function to get raw GitHub URL for a GeoJSON file
