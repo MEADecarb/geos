@@ -1,32 +1,47 @@
-import streamlit as st
 import folium
+from folium.plugins import Geocoder
 import requests
 import pandas as pd
-from streamlit_folium import st_folium
 
-# URLs to your GeoJSON files and CSV on GitHub
-geojson_url1 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/Enough_Act_Child_Poverty_Census_Tracts_-2847962131010073922%20(1).geojson'
-geojson_url2 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/Enough_Act_School_Locations.geojson'
-geojson_url3 = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/MDHB550CensusTracts%20(1).geojson'
-csv_url = 'https://raw.githubusercontent.com/MEADecarb/geos/main/data/MDOTSolar.csv'
+# Define a color palette
+color_palette = ["#2C557E", "#fdda25", "#B7DCDF", "#000000"]  # Fixed color format
 
-# Create a base map
-m = folium.Map(location=[39.2904, -76.6122], zoom_start=10)  # Replace latitude and longitude with your desired center coordinates
+# Create a base map centered over Maryland
+m = folium.Map(location=[39.0458, -76.6413], zoom_start=8)
 
-# Function to add GeoJSON to the map with custom style
-def add_geojson_to_map(url, map_obj, layer_name, color):
-    response = requests.get(url)
-    data = response.json()
-    folium.GeoJson(
-        data,
-        name=layer_name,
-        style_function=lambda x: {'color': color, 'weight': 2}
-    ).add_to(map_obj)
+# Function to add GeoJSON from a URL to a feature group with custom color and pop-up
+def add_geojson_from_url(geojson_url, name, color, map_obj):
+    feature_group = folium.FeatureGroup(name=name)
+    style_function = lambda x: {'fillColor': color, 'color': color}
+    response = requests.get(geojson_url)
+    geojson_data = response.json()
 
-# Add each GeoJSON layer to the map with custom colors
-add_geojson_to_map(geojson_url1, m, 'ENOUGH ACT Census Tracts', 'purple')
-add_geojson_to_map(geojson_url2, m, 'School Locations', 'yellow')  # Default color for School Locations
-add_geojson_to_map(geojson_url3, m, 'HB550 Census Tracts', 'orange')
+    geojson_layer = folium.GeoJson(
+        geojson_data,
+        style_function=style_function
+    )
+
+    if name == "MDOT SHA County Boundaries":
+        # Use 'County' as the label for 'COUNTY_NAME'
+        geojson_layer.add_child(folium.GeoJsonPopup(fields=['COUNTY_NAME'], aliases=['County:'], labels=True))
+    elif name == "MD HB 550 Census Tracts":
+        # Custom handling for the new GeoJSON layer
+        all_fields = list(geojson_data['features'][0]['properties'].keys())
+        geojson_layer.add_child(folium.GeoJsonPopup(fields=all_fields, labels=True))
+
+    geojson_layer.add_to(feature_group)
+    feature_group.add_to(map_obj)
+
+# Add each GeoJSON source as a separate feature group with a color, label, and pop-up
+github_geojson_sources = [
+    ("https://services.arcgis.com/njFNhDsUCentVYJW/arcgis/rest/services/MDOT_SHA_County_Boundaries/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson", "MDOT SHA County Boundaries"),
+    ("https://raw.githubusercontent.com/MEADecarb/schools/main/MDHB550CensusTracts.geojson", "MD HB 550 Census Tracts"),
+    ("https://raw.githubusercontent.com/MEADecarb/CTINT/main/Enough_Act_Child_Poverty_Census_Tracts_-2847962131010073922%20(1).geojson", "Enough Act Child Poverty Census Tracts")  # Corrected URL for raw GeoJSON
+]
+
+for i, (url, name) in enumerate(github_geojson_sources):
+    color = color_palette[i % len(color_palette)]
+    add_geojson_from_url(url, name, color, m)
 
 # Function to add point layer from CSV with custom icon
 def add_point_layer_from_csv(url, map_obj, icon_url):
@@ -35,18 +50,32 @@ def add_point_layer_from_csv(url, map_obj, icon_url):
         folium.Marker(
             location=[row['lat'], row['long']],
             icon=folium.CustomIcon(icon_url, icon_size=(30, 30)),
-            popup=row['MDOT Location']  
+            popup=row['MDOT Location']  # Replace 'name' with the appropriate column name
         ).add_to(map_obj)
 
 # URL to your custom icon
 icon_url = 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Sunshine_icon.png'
 
 # Add the point layer to the map
-add_point_layer_from_csv(csv_url, m, icon_url)
+add_point_layer_from_csv('https://raw.githubusercontent.com/MEADecarb/geos/main/data/MDOTSolar.csv', m, icon_url)
 
 # Add layer control to the map
 folium.LayerControl().add_to(m)
 
-# Display the map in Streamlit
-st.title('Interactive Map with GeoJSON Layers')
-st_folium(m, width=700, height=500)
+# Initialize the geocoder plugin
+geocoder = Geocoder(
+    collapse=True,
+    position='topleft',
+    add_marker=True,
+    popup_on_found=True,
+    zoom=12,
+    search_label='address'
+)
+
+geocoder.add_to(m)
+
+# Save the map to an HTML file
+m.save('index.html')
+
+# Optional: Display the map in a Jupyter Notebook (only if you are running this in a Jupyter environment)
+m
