@@ -1,0 +1,14 @@
+theme: jekyll-theme-minimal
+title: Maryland Energy Administration GEOINT 
+description: An interactive map of HB550 Census Tracts, ENOUGH Act Census Tracts, MDOT Solar, and ENOUGH ACT Schools. 
+
+# Plugins you want to use
+plugins:
+  - jekyll-remote-theme
+
+# Base URL configuration
+baseurl: "/geos" # the subpath of your site, e.g., "/schools"
+url: "https://meadecarb.github.io" # the base hostname & protocol for your site
+
+# Optional settings
+permalink: /:categories/:title/
