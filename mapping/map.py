@@ -1,7 +1,6 @@
 import streamlit as st
 import folium
 import requests
-import json
 import pandas as pd
 from streamlit_folium import st_folium
 
@@ -26,7 +25,7 @@ def add_geojson_to_map(url, map_obj, layer_name, color):
 
 # Add each GeoJSON layer to the map with custom colors
 add_geojson_to_map(geojson_url1, m, 'ENOUGH ACT Census Tracts', 'purple')
-add_geojson_to_map(geojson_url2, m, 'School Locations', 'blue')  # Default color for School Locations
+add_geojson_to_map(geojson_url2, m, 'School Locations', 'yellow')  # Default color for School Locations
 add_geojson_to_map(geojson_url3, m, 'HB550 Census Tracts', 'orange')
 
 # Function to add point layer from CSV with custom icon
@@ -36,7 +35,7 @@ def add_point_layer_from_csv(url, map_obj, icon_url):
         folium.Marker(
             location=[row['lat'], row['long']],
             icon=folium.CustomIcon(icon_url, icon_size=(30, 30)),
-            popup=row['name']  # Replace 'name' with the appropriate column name
+            popup=row['MDOT Location']  
         ).add_to(map_obj)
 
 # URL to your custom icon
